@@ -5,7 +5,7 @@ class ApiErrors extends Error{
         errors=[],
         stack=""
     ){
-        super(message)
+        super(message)          //super and super ka parameters ke bare may thoda padh lena 
         this.statusCode=statusCode
         this.data=null
         this.message=message
