@@ -10,7 +10,8 @@ class ApiErrors extends Error{
         this.data=null
         this.message=message
         this.success=false;
-        this.stack=stack
+        this.stack=stack            
+        //stack ke bare may bhi thoda padhn lena or stack ka isme last line nahi likha hu usko dekhn ke add karlena
         this.errors=errors
 
     }
