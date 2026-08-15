@@ -3,7 +3,7 @@ import multer from "multer";
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {//destination :The folder to which the file has been saved 
     //cb full-form CallBack
-    cb(null, './public/temp')
+    cb(null, './public/temp')   //cb ka first parameters null kyu hai 
   },
   filename: function (req, file, cb) { //The name of the File within the destination 
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
@@ -15,6 +15,9 @@ const storage = multer.diskStorage({
  export const upload = multer({ 
     storage,
  })
+
+
+//Multer ka documentation padhna hai 
 
 
 //  What is the differcne betwen export {storage} and export const upload = multer({ 
