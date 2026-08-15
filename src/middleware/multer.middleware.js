@@ -18,6 +18,7 @@ const storage = multer.diskStorage({
 
 
 //Multer ka documentation padhna hai 
+//Multer ka last ka 8 minutes fir se dekhna hai 
 
 
 //  What is the differcne betwen export {storage} and export const upload = multer({ 
