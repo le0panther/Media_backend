@@ -16,6 +16,13 @@ const storage = multer.diskStorage({
     storage,
  })
 
+//upper wala or niche wala export may kya difference hai 
+
+//   export const upload = multer({ 
+//     storage:storage
+//  })
+ 
+
 
 //Multer ka documentation padhna hai 
 //Multer ka last ka 8 minutes fir se dekhna hai 
