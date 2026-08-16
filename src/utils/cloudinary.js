@@ -29,5 +29,7 @@ const uploadOnCloudinary = async(localFilePath)=>{
 
 export{uploadOnCloudinary}
 
+//Named Export (export { router }): Requires using the exact same name inside curly braces (or using as to rename it).
+
 
     
