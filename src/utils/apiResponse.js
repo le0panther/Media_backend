@@ -12,4 +12,6 @@ class ApiResponse {
 }
 
 
+export {ApiResponse}
+
 //iskoo is liye bana gaya hai taki jab response  and erro ek hi sytax type jaye 
