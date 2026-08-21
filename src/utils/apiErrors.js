@@ -1,4 +1,4 @@
-class ApiErrors extends Error{
+class ApiError extends Error{
     constructor( 
         statusCode,
         message="Something went wrong",
@@ -17,4 +17,5 @@ class ApiErrors extends Error{
     }
 }
 
+export {ApiError}
 //iskoo is liye bana gaya hai taki jab response  and erro ek hi sytax type jaye 
