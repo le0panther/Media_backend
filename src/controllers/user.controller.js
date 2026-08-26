@@ -5,10 +5,22 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 
 
+const generateAccessAndRefreshTokens = async(userId)=>{
+        try {
+             const user= await User.findById(userId) 
+             const accessToken=user.generateAccessToken()
+             const refreshToken=user.generateRefreshToken()
 
+             user.refreshToken = refreshToken
+             await user.save({validateBeforeSave : false})
 
+             return {accessToken , refreshToken}   
+        } catch (error) {
+               throw new ApiError(500,"Somewent Wrong while generating refresh and access token") 
+        }
+}
 
-const registerUser=asyncHandler(async (req ,res )=>{
+const registerUser = asyncHandler(async (req ,res )=>{
         //get user deatails form frontend
         //validation - not empty
         //check if user already exists : username , email
@@ -30,18 +42,17 @@ const registerUser=asyncHandler(async (req ,res )=>{
 
        if (
         [fullName,email,username,password].some((field)=>{
-                field?.trim()==""
-                return field
+                const fields=field?.trim()==""
+                return fields
         })
         // yaha ka logic kuch essa hai ki ek array banaye or usme hum log values dal diye phir usko humlog some ke sath check kar rahe hai ki agar isme se koi bhi ek chij some ke anddar ke callback ko satify karega toh field true de dega ,some bus first match tak chalega 
        )
         {
                 throw new ApiError(400,"values needed")
-        
        }
 
 
-       const existedUser = User.findOne({
+       const existedUser = await User.findOne({
         $or: [ {username} , {email} ]
        })
 
@@ -53,7 +64,12 @@ const registerUser=asyncHandler(async (req ,res )=>{
        //req.body express deta hai taki aap req.body ke sath khel pao waisehi multer aapko req.files deta hai 
 
        const avatarLocalPath=req.files?.avatar[0]?.path;
-       const coverImageLocalPath=req.files?.coverImage[0]?.path;
+       let coverImageLocalPath;
+
+       if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0 ){
+        coverImageLocalPath= req.files.coverImage[0].path
+       }
+
 
        if(!avatarLocalPath){
         throw new ApiError(400,"Avatar file is required ")
@@ -95,6 +111,131 @@ const registerUser=asyncHandler(async (req ,res )=>{
 
 })
 
-export {registerUser}
+const loginUser= asyncHandler(async(req,res)=>{
+       // req body->data
+       // username or email 
+       // find the user 
+       // password check 
+       // access and refresh token 
+       // send cookies 
+        
+       const {email,username,password} = req.body
+       //req.body se required data nikal rahe hai 
 
+       if (!username && !email) {
+                throw new ApiError(400,"Username or email is required ")
+       }
+       //if condition laga ke check kar rahe hai ki kya  usernname or email humpe empty/ aaya hai ki nahi form req.body
+
+       const user = await User.findOne({
+        $or:[{username},{email}]
+       })
+       //findOne method ka user kar ke username and email ke basis may user ko find kar rahe hai 
+
+       if (!user) {
+        throw new ApiError(400,"User does not exists ")  
+       }
+       //if condition daal ke check kar rahe hai ki agar user mila hi nahi toh kya karna hai / throw an error if no user found 
+
+       const isPasswordValid=await user.isPasswordCorrect(password )
+       //user ne jo password send kiya hai hum usko bcrypt ke through check kar rahe hai ki vo correct hai ki nahi 
+
+       if(!isPasswordValid){
+        throw new ApiError(401,"Invalid Credentials ")
+       }
+       // if condition daal ke phir error throw kar rahe hai agar vo galat hai 
+
+        const {accessToken,refreshToken} = await generateAccessAndRefreshTokens(user._id)
+        //generateAccessAndRefreshToken ke through hum log Access and Refresh token genrate karege 
+
+//lekin kyuki GAaRT bahut baar use hogo toh usko tu utils may dal ke export mar de 
+
+        const loggedInUser= await User.findById(user._id).select("-password -refreshToken")
+       //ye step ko phir se dekh lena 
+       //video 15 ka 28 minutes se suru karna 
+
+       const options = {
+        httpOnly : true,
+        secure : true
+       }
+       //jab bhi hum cookies bhejte hai toh tab hum logo ko pehle kuch options design karne padhnte hai cookies ke 
+
+       // options kuch nahi hota hai , options bus ek object hot hai cookies ke liye 
+
+       //Options se hota kya hai ki by default cookies ko koi bhi modify kar sakta hai frontend may  lekin jab humlog httpOnly and secure ko true karte hai tab ye modified nahi ki ja sakti bus server issse modify and access kar sakta hai 
+
+       return res
+       .status(200)
+       .cookie("accessToken",accessToken,options )
+       .cookie("refreshToken",refreshToken,options)
+       .json(
+        new ApiResponse(
+                200,
+                {
+                        user:loggedInUser,
+                        accessToken,
+                        refreshToken
+                }
+                //jab hum log all ready user ko accesstoken and refresh token bhej chuke the toh ab phir response may kyu bhej rahe hai 
+
+                //video 15 ,32 min may explanation hai dekh lena 
+
+                , "User logged in Successfully "
+
+
+
+       ))
+
+
+
+})
+
+const logoutUser=asyncHandler(async(req,res)=>{
+        //User.findById
+
+        //ab dekho jab hum log logout karte hai toh humko uer kuchh data send nahi karta hai toh hum kese specific user ko find kare or use logout kare 
+
+        //toh humlog yaha pe (custom) middleware ka concept use karege 
+
+        //hum kya karege , hum ek essa middleware likhege jo ek essa method pehle use karega jisme usser ka data hoga phir logout ko run kara dege or kiyuki ye back to back hoga with the help of next toh logoutUser ko data mil jayega 
+
+        //agar just upper wala line / comment samajh nahi aaya hoga toh video 15 ka 50 yah end wla part / logout wala part dekh lena 
+
+        await User.findByIdAndUpdate(
+                req.user._id,
+                {
+                        $set:{
+                                refreshToken:undefined 
+                        }
+                },
+                {
+                        new:true
+                }
+        )//upper wale code ka reference hum ek variable may bhi store kar sakte hai , hitesh sir store nahi kare hai toh may dekh luga 
+
+        //refresh token clear kar diye hai with the help of  upper wale code 
+
+
+        const options = {
+        httpOnly : true,
+        secure : true
+       }
+
+       return res
+       .status(200)
+       .clearCookie("accessToken",options)
+       .clearCookie("refreshToken",options)
+       .json(new ApiResponse(200,{},"User logged Out "))
+
+})
+
+
+export {
+        registerUser,
+        loginUser,
+        logoutUser
+}
 //.some() returns true as soon as it finds at least one element that satisfies the condition.
+
+
+

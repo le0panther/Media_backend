@@ -8,6 +8,8 @@ dotenv.config({
     path:'./.env'
 })
 
+console.log("dotenv done")
+
 
 DB_Connect()
 .then(()=>{
