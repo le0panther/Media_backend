@@ -238,34 +238,54 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
         if(!incomingRefreshToken){
                 throw new ApiError(401,"Unauthorized request ")
                 //Unauthorized isliye bole kyuki humara token hi sahi nahi hai 
+        }
 
+        try {
                 //ye step (jwt verify step ,i mean jwt verify karna important kyu hai  )
-
+        
                 const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
-
+        
                 const user = await User.findById(decodedToken?._id)
-
+        
                 if(!user){
                         throw new ApiError(401,"Invalid Refresh Token ")
                 }
-
-
+        
+        
                 if(incomingRefreshToken != user?.refreshToken){
                         throw new ApiError(401,"Refresh Token is expired or used ")
                 }
-
-
-
-                
-
+        
+                const options ={
+                        httpOnly:true,
+                        secure:true
+                }
+        
+               const {accessToken, newRefreshToken} = await generateAccessAndRefreshTokens(user._id)
+        
+                return res
+                .status(200)
+                .cookie("accessToken" , accessToken , options)
+                .cookie("refreshToken", newRefreshToken , options)
+                .json(
+                        new ApiResponse(200,
+                                {accessToken,refreshToken:newRefreshToken},
+                                "Access Token refreshed successfully"
+                        )
+                )
+        
+        } catch (error) {
+                throw new ApiError(401,error?.message || "Invalid refresh Token  ")       
         }
+   
 
 })
 
 export {
         registerUser,
         loginUser,
-        logoutUser
+        logoutUser,
+        refreshAccessToken
 }
 //.some() returns true as soon as it finds at least one element that satisfies the condition.
 
