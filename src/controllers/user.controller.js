@@ -281,11 +281,91 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
 
 })
 
+const changeCurrentPassword =asyncHandler(async(req,res)=>{f
+     const {oldPassword , newPassword  }=req.body 
+
+      const user = await User.findById(req.user?._id)
+      const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+      if(!isPasswordCorrect){
+        throw new ApiError(400,"Invalid Old Password ")
+      }
+
+      user.password = newPassword
+      await user.save({validateBeforeSave:false})
+
+      return res
+      .status(200)
+      .json(
+        new ApiResponse(200,{},"Password Changed Successfully ")
+      )
+})
+
+const getCurrentUser = asyncHandler(async(req,res)=>{
+       // const currentUser=await User.findById(req.user?._id)
+       //return currentUser
+
+       return res 
+       .status(200)
+       .json(200,req.user,"current user fetched successfully ")
+
+       //yaha pe pehle req.user ko ek baar console kar ke dekhna or mer commented code ko bhi or bhir ye code ko bhi or unke bichne may difference find ouut karna 
+
+
+
+})
+
+const updateAccountDetails = asyncHandler(async(req,res)=>{
+        const {fullName,email}=req.body
+
+        if(!fullName || !email){
+                throw new ApiError(400,"All fields are required")
+        }
+
+        const user =await User.findByIdAndUpdate(
+                req.user?._id,
+                {
+                        // email:req.body.email,
+                        // fullName:req.body.fullName
+                        //commented code is funtional but the bottom is the industry standard 
+
+                        $set:{
+                                fullName,       
+                                // equivalent ot fullNmae= fullName
+                                email
+                        }
+                },
+                {new:true} //updated user send ho raha hai 
+        ).select("-password")
+
+                // User.findByIdAndUpdate(
+                // id,        // 1. WHO to find
+                // update,    // 2. WHAT to change
+               // options    // 3. HOW to behave
+
+
+        return res
+        .status(200)
+        .json(new ApiResponse(200,user,"Account details updated successfully "))
+})    
+
+const updateUserAvatar = asyncHandler(async(req,res)=>{
+
+})
+
+const updateCoverImage = asyncHandler(async(req,res)=>{
+        
+})
+
+
 export {
         registerUser,
         loginUser,
         logoutUser,
-        refreshAccessToken
+        refreshAccessToken,
+        changeCurrentPassword,
+        getCurrentUser,
+
 }
 //.some() returns true as soon as it finds at least one element that satisfies the condition.
 
